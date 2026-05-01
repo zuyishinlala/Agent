@@ -84,6 +84,10 @@ def main(argv: list[str] | None = None) -> int:
         report_path = Path("artifacts") / f"{args.csv.stem}_report.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     explanation = state.get("explanation", "")
+    summary_lines = ""
+    if state.get("issues_detected") is not None:
+        summary_lines += f"- Issues detected: {state.get('issues_detected')}\n"
+
     q_meta = ""
     if state.get("quality_score") is not None:
         q_meta = (
@@ -94,13 +98,16 @@ def main(argv: list[str] | None = None) -> int:
         )
     body = (
         f"# Pipeline report\n\n"
-        f"Cleaned CSV: `{state.get('cleaned_csv_path', '')}`\n"
+        f"Cleaned CSV: `{state.get('cleaned_csv_path', '')}`\n\n"
+        f"## Summary\n{summary_lines}\n"
         f"{q_meta}"
         f"{explanation}\n"
     )
     report_path.write_text(body, encoding="utf-8")
     print(f"Wrote report: {report_path.resolve()}")
     print(f"Cleaned CSV: {state.get('cleaned_csv_path', '')}")
+    if state.get("issues_detected") is not None:
+        print(f"Issues detected: {state.get('issues_detected')}")
     if state.get("quality_score") is not None:
         print(
             f"Quality score: {state.get('quality_score')} "

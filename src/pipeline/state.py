@@ -17,6 +17,7 @@ class PipelineState(TypedDict, total=False):
     cleaning_plan: dict[str, Any]
     cleaned_csv_path: str
     validation: dict[str, Any]
+    issues_detected: int
     quality_score: float
     quality_pass: bool
     quality_breakdown: dict[str, Any]

@@ -12,7 +12,7 @@ from pipeline.llm_text import extract_message_text
 from pipeline.profile import build_profile
 from pipeline.quality import compute_quality_score, quality_feedback_text
 from pipeline.state import PipelineState
-from pipeline.validation import run_validation, validation_summary_text
+from pipeline.validation import issues_detected_count, run_validation, validation_summary_text
 
 
 def _model_name() -> str:
@@ -120,7 +120,7 @@ def node_validate(state: PipelineState) -> dict:
         id_columns = cols[:1]
 
     v = run_validation(df, id_columns=id_columns or None, consistency_total=None)
-    return {"validation": v}
+    return {"validation": v, "issues_detected": issues_detected_count(v)}
 
 
 def node_quality_score(state: PipelineState) -> dict:
@@ -215,9 +215,14 @@ def node_explain(state: PipelineState) -> dict:
             "Do not wrap the answer in JSON or code fences around the whole document."
         ),
     )
+    kpi = ""
+    if state.get("issues_detected") is not None:
+        kpi += f"Issues detected (post-clean): {state.get('issues_detected')}\n\n"
+
     human = HumanMessage(
         content=(
             f"{q_block}"
+            f"{kpi}"
             f"Cleaning plan:\n{json.dumps(plan, indent=2)[:40_000]}\n\n"
             f"Profile summary (row_count={profile.get('row_count')}):\n"
             f"{json.dumps(profile.get('columns', []), indent=2)[:40_000]}\n\n"

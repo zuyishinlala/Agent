@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from pipeline.validation import run_validation
+from pipeline.validation import issues_detected_count, run_validation
 
 
 def test_duplicates_and_consistency():
@@ -22,3 +22,13 @@ def test_duplicates_and_consistency():
     assert v["duplicate_id_rows"] == 2
     assert v["consistency"] is not None
     assert v["consistency"]["mismatch_beyond_tolerance"] >= 1
+
+
+def test_issues_detected_count_nulls_and_dup():
+    df = pd.DataFrame({"id": [1, 2], "x": [None, 1]})
+    v = run_validation(df, id_columns=["id"])
+    assert issues_detected_count(v) == 1
+
+    df2 = pd.DataFrame({"id": [1, 1], "x": [1, 2]})
+    v2 = run_validation(df2, id_columns=["id"])
+    assert issues_detected_count(v2) == 1

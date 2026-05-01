@@ -47,6 +47,18 @@ def run_validation(
     return out
 
 
+def issues_detected_count(validation: dict[str, Any]) -> int:
+    """
+    Rough issue tally: one per column with any nulls, plus one if duplicate ID rows exist.
+    """
+    null_counts = validation.get("null_counts") or {}
+    n = sum(1 for _col, cnt in null_counts.items() if int(cnt) > 0)
+    dup = validation.get("duplicate_id_rows")
+    if dup is not None and int(dup) > 0:
+        n += 1
+    return int(n)
+
+
 def validation_summary_text(v: dict[str, Any]) -> str:
     """Compact string for LLM context."""
     parts = [
