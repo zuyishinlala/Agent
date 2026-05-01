@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-pipeline-agent"
+version = "0.1.0"
+description = "LangGraph + Gemini two-agent CSV cleaning and validation pipeline"
+requires-python = ">=3.10"
+dependencies = [
+  "langgraph>=0.2.55",
+  "langchain-google-genai>=2.0.8",
+  "langchain-core>=0.3.29",
+  "pandas>=2.2.0",
+  "pydantic>=2.6.0",
+  "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+pipeline-run = "pipeline.run:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
