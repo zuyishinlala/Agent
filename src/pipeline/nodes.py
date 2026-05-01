@@ -12,7 +12,12 @@ from pipeline.llm_text import extract_message_text
 from pipeline.profile import build_profile
 from pipeline.quality import compute_quality_score, quality_feedback_text
 from pipeline.state import PipelineState
-from pipeline.validation import issues_detected_count, run_validation, validation_summary_text
+from pipeline.validation import (
+    infer_id_columns_from_profile,
+    issues_detected_count,
+    run_validation,
+    validation_summary_text,
+)
 
 
 def _model_name() -> str:
@@ -91,13 +96,29 @@ def node_apply_cleaning(state: PipelineState) -> dict:
     except Exception as e:  # noqa: BLE001
         return {"errors": state.get("errors", []) + [f"invalid_cleaning_plan: {e!s}"]}
 
+    profile = state.get("profile", {})
     df = load_csv(csv_path)
     cleaned = apply_cleaning_plan(df, plan)
+
+    id_cols = infer_id_columns_from_profile(profile)
+    id_cols = [c for c in id_cols if c in cleaned.columns]
+    duplicates_removed = 0
+    rows_before_dedup = int(len(cleaned))
+    if id_cols:
+        before_dedup = len(cleaned)
+        cleaned = cleaned.drop_duplicates(subset=id_cols, keep="first").reset_index(drop=True)
+        duplicates_removed = before_dedup - len(cleaned)
+
     stem = Path(csv_path).stem
     out_dir = Path("artifacts")
     out_path = out_dir / f"{stem}_cleaned.csv"
     cleaned_csv_path = write_csv(cleaned, out_path)
-    return {"cleaned_csv_path": cleaned_csv_path}
+    stats: dict[str, int] = {
+        "duplicates_removed": duplicates_removed,
+        "rows_before_dedup": rows_before_dedup,
+        "rows_after_cleaning": int(len(cleaned)),
+    }
+    return {"cleaned_csv_path": cleaned_csv_path, "cleaning_stats": stats}
 
 
 def node_validate(state: PipelineState) -> dict:
@@ -109,15 +130,7 @@ def node_validate(state: PipelineState) -> dict:
     profile = state.get("profile", {})
     df = load_csv(path)
 
-    id_columns: list[str] = []
-    for col in profile.get("columns", []):
-        name = col.get("name", "")
-        n = name.lower()
-        if "transaction id" in n or n.endswith("_id") or n == "id":
-            id_columns.append(name)
-    if not id_columns:
-        cols = [c["name"] for c in profile.get("columns", []) if "id" in c["name"].lower()]
-        id_columns = cols[:1]
+    id_columns = infer_id_columns_from_profile(profile)
 
     v = run_validation(df, id_columns=id_columns or None, consistency_total=None)
     return {"validation": v, "issues_detected": issues_detected_count(v)}
@@ -218,6 +231,9 @@ def node_explain(state: PipelineState) -> dict:
     kpi = ""
     if state.get("issues_detected") is not None:
         kpi += f"Issues detected (post-clean): {state.get('issues_detected')}\n\n"
+    cs = state.get("cleaning_stats")
+    if cs:
+        kpi += f"Cleaning stats: {json.dumps(cs, indent=2)[:4_000]}\n\n"
 
     human = HumanMessage(
         content=(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from pipeline.validation import issues_detected_count, run_validation
+from pipeline.validation import infer_id_columns_from_profile, issues_detected_count, run_validation
 
 
 def test_duplicates_and_consistency():
@@ -32,3 +32,13 @@ def test_issues_detected_count_nulls_and_dup():
     df2 = pd.DataFrame({"id": [1, 1], "x": [1, 2]})
     v2 = run_validation(df2, id_columns=["id"])
     assert issues_detected_count(v2) == 1
+
+
+def test_infer_id_columns_from_profile():
+    prof = {
+        "columns": [
+            {"name": "Transaction ID"},
+            {"name": "Amount"},
+        ]
+    }
+    assert infer_id_columns_from_profile(prof) == ["Transaction ID"]

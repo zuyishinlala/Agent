@@ -87,6 +87,9 @@ def main(argv: list[str] | None = None) -> int:
     summary_lines = ""
     if state.get("issues_detected") is not None:
         summary_lines += f"- Issues detected: {state.get('issues_detected')}\n"
+    cs = state.get("cleaning_stats") or {}
+    if "duplicates_removed" in cs:
+        summary_lines += f"- Duplicates removed: {cs.get('duplicates_removed')}\n"
 
     q_meta = ""
     if state.get("quality_score") is not None:
@@ -108,6 +111,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Cleaned CSV: {state.get('cleaned_csv_path', '')}")
     if state.get("issues_detected") is not None:
         print(f"Issues detected: {state.get('issues_detected')}")
+    cs = state.get("cleaning_stats") or {}
+    if "duplicates_removed" in cs:
+        print(f"Duplicates removed: {cs.get('duplicates_removed')}")
     if state.get("quality_score") is not None:
         print(
             f"Quality score: {state.get('quality_score')} "

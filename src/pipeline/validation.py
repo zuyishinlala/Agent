@@ -47,6 +47,20 @@ def run_validation(
     return out
 
 
+def infer_id_columns_from_profile(profile: dict[str, Any]) -> list[str]:
+    """Heuristic ID columns from a profile dict (same rules as the validate node)."""
+    id_columns: list[str] = []
+    for col in profile.get("columns", []):
+        name = col.get("name", "")
+        n = name.lower()
+        if "transaction id" in n or n.endswith("_id") or n == "id":
+            id_columns.append(name)
+    if not id_columns:
+        cols = [c["name"] for c in profile.get("columns", []) if "id" in c["name"].lower()]
+        id_columns = cols[:1]
+    return id_columns
+
+
 def issues_detected_count(validation: dict[str, Any]) -> int:
     """
     Rough issue tally: one per column with any nulls, plus one if duplicate ID rows exist.
