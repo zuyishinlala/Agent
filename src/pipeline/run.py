@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+
+def _quality_threshold_0_100(value: str) -> float:
+    v = float(value)
+    if not 0.0 <= v <= 100.0:
+        raise argparse.ArgumentTypeError("quality-pass-threshold must be between 0 and 100")
+    return v
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -28,6 +36,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Rows to include in profile sample per column.",
     )
     parser.add_argument(
+        "--quality-pass-threshold",
+        type=_quality_threshold_0_100,
+        default=70.0,
+        metavar="N",
+        help="Minimum quality score (0-100) to pass without another cleaning pass.",
+    )
+    parser.add_argument(
+        "--max-quality-retries",
+        type=int,
+        default=2,
+        help="Maximum extra cleaning passes after quality score is below threshold (>= 0).",
+    )
+    parser.add_argument(
         "--report",
         type=Path,
         default=None,
@@ -39,12 +60,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: file not found: {args.csv}", file=sys.stderr)
         return 1
 
+    if args.max_quality_retries < 0:
+        print("error: --max-quality-retries must be >= 0", file=sys.stderr)
+        return 1
+
     from pipeline.graph import run_pipeline
 
     state = run_pipeline(
         str(args.csv.resolve()),
         user_hints=args.hints,
         sample_rows=args.sample_rows,
+        quality_pass_threshold=args.quality_pass_threshold,
+        max_clean_retries=args.max_quality_retries,
     )
 
     if state.get("errors"):
@@ -57,10 +84,28 @@ def main(argv: list[str] | None = None) -> int:
         report_path = Path("artifacts") / f"{args.csv.stem}_report.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     explanation = state.get("explanation", "")
-    body = f"# Pipeline report\n\nCleaned CSV: `{state.get('cleaned_csv_path', '')}`\n\n{explanation}\n"
+    q_meta = ""
+    if state.get("quality_score") is not None:
+        q_meta = (
+            f"\n**Quality score:** {state.get('quality_score')} / 100 "
+            f"(threshold {state.get('quality_pass_threshold', 70)}, "
+            f"pass={state.get('quality_pass')}, retries={state.get('clean_retry_count', 0)})\n\n"
+            f"```json\n{json.dumps(state.get('quality_breakdown', {}), indent=2)}\n```\n\n"
+        )
+    body = (
+        f"# Pipeline report\n\n"
+        f"Cleaned CSV: `{state.get('cleaned_csv_path', '')}`\n"
+        f"{q_meta}"
+        f"{explanation}\n"
+    )
     report_path.write_text(body, encoding="utf-8")
     print(f"Wrote report: {report_path.resolve()}")
     print(f"Cleaned CSV: {state.get('cleaned_csv_path', '')}")
+    if state.get("quality_score") is not None:
+        print(
+            f"Quality score: {state.get('quality_score')} "
+            f"(pass={state.get('quality_pass')}, retries={state.get('clean_retry_count', 0)})",
+        )
     return 0
 
 
