@@ -88,6 +88,10 @@ def main(argv: list[str] | None = None) -> int:
     if state.get("issues_detected") is not None:
         summary_lines += f"- Issues detected: {state.get('issues_detected')}\n"
     cs = state.get("cleaning_stats") or {}
+    if "missing_filled" in cs:
+        summary_lines += (
+            f"- Missing filled (sentinels/empties normalized to null): {cs.get('missing_filled')}\n"
+        )
     if "duplicates_removed" in cs:
         summary_lines += f"- Duplicates removed: {cs.get('duplicates_removed')}\n"
 
@@ -112,6 +116,8 @@ def main(argv: list[str] | None = None) -> int:
     if state.get("issues_detected") is not None:
         print(f"Issues detected: {state.get('issues_detected')}")
     cs = state.get("cleaning_stats") or {}
+    if "missing_filled" in cs:
+        print(f"Missing filled (normalized): {cs.get('missing_filled')}")
     if "duplicates_removed" in cs:
         print(f"Duplicates removed: {cs.get('duplicates_removed')}")
     if state.get("quality_score") is not None:

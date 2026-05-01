@@ -7,6 +7,7 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+from pipeline.cleaning_metrics import count_missing_filled_normalizations
 from pipeline.cleaning_plan import CleaningPlan, apply_cleaning_plan, load_csv, write_csv
 from pipeline.llm_text import extract_message_text
 from pipeline.profile import build_profile
@@ -98,7 +99,9 @@ def node_apply_cleaning(state: PipelineState) -> dict:
 
     profile = state.get("profile", {})
     df = load_csv(csv_path)
-    cleaned = apply_cleaning_plan(df, plan)
+    after_plan = apply_cleaning_plan(df, plan)
+    missing_filled = count_missing_filled_normalizations(df, after_plan, plan)
+    cleaned = after_plan
 
     id_cols = infer_id_columns_from_profile(profile)
     id_cols = [c for c in id_cols if c in cleaned.columns]
@@ -114,6 +117,7 @@ def node_apply_cleaning(state: PipelineState) -> dict:
     out_path = out_dir / f"{stem}_cleaned.csv"
     cleaned_csv_path = write_csv(cleaned, out_path)
     stats: dict[str, int] = {
+        "missing_filled": missing_filled,
         "duplicates_removed": duplicates_removed,
         "rows_before_dedup": rows_before_dedup,
         "rows_after_cleaning": int(len(cleaned)),
