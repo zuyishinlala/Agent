@@ -15,7 +15,6 @@ from pipeline.quality import compute_quality_score, quality_feedback_text
 from pipeline.state import PipelineState
 from pipeline.validation import (
     infer_id_columns_from_profile,
-    issues_detected_count,
     run_validation,
     validation_summary_text,
 )
@@ -137,7 +136,7 @@ def node_validate(state: PipelineState) -> dict:
     id_columns = infer_id_columns_from_profile(profile)
 
     v = run_validation(df, id_columns=id_columns or None, consistency_total=None)
-    return {"validation": v, "issues_detected": issues_detected_count(v)}
+    return {"validation": v}
 
 
 def node_quality_score(state: PipelineState) -> dict:
@@ -233,8 +232,6 @@ def node_explain(state: PipelineState) -> dict:
         ),
     )
     kpi = ""
-    if state.get("issues_detected") is not None:
-        kpi += f"Issues detected (post-clean): {state.get('issues_detected')}\n\n"
     cs = state.get("cleaning_stats")
     if cs:
         kpi += f"Cleaning stats: {json.dumps(cs, indent=2)[:4_000]}\n\n"

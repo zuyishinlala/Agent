@@ -31,7 +31,7 @@ Outputs:
 - `artifacts/<name>_cleaned.csv`
 - `artifacts/<name>_report.md` (Markdown from the model; text is taken from the message’s `.text` field so Gemini block metadata is not dumped into the file)
 
-Each run’s report **Summary** lists **issues detected**, **missing filled** (sentinel/empty cells normalized to null; not imputation), **duplicates removed** (when ID columns are inferred), and **quality score**.
+Each run’s report **Summary** lists **missing filled** (sentinel/empty cells normalized to null; not imputation), **duplicates removed** (when ID columns are inferred), and **quality score**. Null counts and duplicate-ID row counts remain in the validation JSON passed to the explanation step.
 
 Optional: `GEMINI_MODEL` (default `gemini-3-flash-preview`).
 
