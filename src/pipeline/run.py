@@ -86,9 +86,14 @@ def main(argv: list[str] | None = None) -> int:
     explanation = state.get("explanation", "")
     summary_lines = ""
     cs = state.get("cleaning_stats") or {}
+    prof = state.get("profile") or {}
+    rows_in = prof.get("row_count")
+    rows_out = cs.get("rows_after_cleaning")
+    if rows_in is not None and rows_out is not None:
+        summary_lines += f"- Volume reduction: {int(rows_in):,} → {int(rows_out):,} rows\n"
     if "missing_filled" in cs:
         summary_lines += (
-            f"- Missing filled (sentinels/empties normalized to null): {cs.get('missing_filled')}\n"
+            f"- Missing/invalid values standardized: {cs.get('missing_filled')}\n"
         )
     if "duplicates_removed" in cs:
         summary_lines += f"- Duplicates removed: {cs.get('duplicates_removed')}\n"
@@ -112,6 +117,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Wrote report: {report_path.resolve()}")
     print(f"Cleaned CSV: {state.get('cleaned_csv_path', '')}")
     cs = state.get("cleaning_stats") or {}
+    prof = state.get("profile") or {}
+    ri, ro = prof.get("row_count"), cs.get("rows_after_cleaning")
+    if ri is not None and ro is not None:
+        print(f"Volume: {int(ri):,} → {int(ro):,} rows")
     if "missing_filled" in cs:
         print(f"Missing filled (normalized): {cs.get('missing_filled')}")
     if "duplicates_removed" in cs:
