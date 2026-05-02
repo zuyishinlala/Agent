@@ -23,6 +23,7 @@ dev = [
 
 [project.scripts]
 pipeline-run = "pipeline.run:main"
+pipeline-graph-mermaid = "pipeline.graph:main_mermaid"
 
 [tool.setuptools.packages.find]
 where = ["src"]

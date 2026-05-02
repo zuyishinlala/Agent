@@ -68,3 +68,5 @@ Unit tests do not call the Gemini API.
 
 - `src/pipeline/` — graph, nodes, profiling, `CleaningPlan` + executor, validation, quality scoring
 - `tests/` — pytest
+
+**Graph (Mermaid):** run `pipeline-graph-mermaid` (after `pip install -e .`) to print the compiled LangGraph as Mermaid text from `get_graph().draw_mermaid()`; paste the output into [mermaid.live](https://mermaid.live) to visualize.

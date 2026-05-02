@@ -17,10 +17,10 @@ from pipeline.state import PipelineState
 def route_after_quality(state: PipelineState) -> str:
     if state.get("errors"):
         print("[quality] next step: write report (pipeline errors).", flush=True)
-        return "explain"
+        return "explain_agent"
     if state.get("quality_pass"):
         print("[quality] next step: write report (score meets threshold).", flush=True)
-        return "explain"
+        return "explain_agent"
     max_r = int(state.get("max_clean_retries", 2))
     if int(state.get("clean_retry_count", 0)) >= max_r:
         print(
@@ -28,7 +28,7 @@ def route_after_quality(state: PipelineState) -> str:
             f"no more cleaning retries, limit was {max_r}).",
             flush=True,
         )
-        return "explain"
+        return "explain_agent"
     print("[quality] next step: run another cleaning pass.", flush=True)
     return "increment_retry"
 
@@ -41,7 +41,7 @@ def build_graph():
     g.add_node("validate", node_validate)
     g.add_node("quality_score", node_quality_score)
     g.add_node("increment_retry", node_increment_retry)
-    g.add_node("explain", node_explain)
+    g.add_node("explain_agent", node_explain)
 
     g.set_entry_point("load")
     g.add_edge("load", "cleaning_agent")
@@ -52,12 +52,12 @@ def build_graph():
         "quality_score",
         route_after_quality,
         {
-            "explain": "explain",
+            "explain_agent": "explain_agent",
             "increment_retry": "increment_retry",
         },
     )
     g.add_edge("increment_retry", "cleaning_agent")
-    g.add_edge("explain", END)
+    g.add_edge("explain_agent", END)
     return g.compile()
 
 
@@ -85,3 +85,17 @@ def run_pipeline(
     }
     result = app.invoke(initial)
     return result  # type: ignore[return-value]
+
+
+def graph_mermaid() -> str:
+    """Mermaid source for the compiled graph (paste into https://mermaid.live)."""
+    return build_graph().get_graph().draw_mermaid()
+
+
+def main_mermaid() -> int:
+    print(graph_mermaid())
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main_mermaid())
