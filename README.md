@@ -64,9 +64,14 @@ python -m pytest
 
 Unit tests do not call the Gemini API.
 
+## Planner prompt harness
+
+To batch-compare cleaning planner prompts (JSONL metrics, optional Bash helper over `files/*.csv`, and a pandas summary), see [docs/planner-harness.md](docs/planner-harness.md).
+
 ## Layout
 
 - `src/pipeline/` — graph, nodes, profiling, `CleaningPlan` + executor, validation, quality scoring
 - `tests/` — pytest
+- `docs/` — harness and related notes (`planner-harness.md`)
 
 **Graph (Mermaid):** run `pipeline-graph-mermaid` (after `pip install -e .`) to print the compiled LangGraph as Mermaid text from `get_graph().draw_mermaid()`; paste the output into [mermaid.live](https://mermaid.live) to visualize.
