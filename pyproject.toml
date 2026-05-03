@@ -24,6 +24,7 @@ dev = [
 [project.scripts]
 pipeline-run = "pipeline.run:main"
 pipeline-graph-mermaid = "pipeline.graph:main_mermaid"
+pipeline-planner-harness = "pipeline.harness_planner:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

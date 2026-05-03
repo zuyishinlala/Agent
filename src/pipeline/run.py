@@ -7,6 +7,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from pipeline.artifact_names import default_report_md_path
+
 
 def _quality_threshold_0_100(value: str) -> float:
     v = float(value)
@@ -23,6 +25,12 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         type=Path,
         help="Path to input CSV file.",
+    )
+    parser.add_argument(
+        "--cleaning-planner-prompt",
+        default="default",
+        metavar="ID",
+        help="Cleaning planner system prompt variant (see pipeline.prompts.cleaning_planner).",
     )
     parser.add_argument(
         "--hints",
@@ -52,7 +60,8 @@ def main(argv: list[str] | None = None) -> int:
         "--report",
         type=Path,
         default=None,
-        help="Write explanation Markdown to this path (default: artifacts/<stem>_report.md).",
+        help="Write explanation Markdown to this path (default: artifacts/<stem>_report.md, "
+        "or <stem>_report__<prompt>.md when --cleaning-planner-prompt is not default).",
     )
     args = parser.parse_args(argv)
 
@@ -68,6 +77,7 @@ def main(argv: list[str] | None = None) -> int:
 
     state = run_pipeline(
         str(args.csv.resolve()),
+        cleaning_planner_prompt_id=args.cleaning_planner_prompt,
         user_hints=args.hints,
         sample_rows=args.sample_rows,
         quality_pass_threshold=args.quality_pass_threshold,
@@ -81,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
 
     report_path = args.report
     if report_path is None:
-        report_path = Path("artifacts") / f"{args.csv.stem}_report.md"
+        report_path = default_report_md_path(args.csv.stem, args.cleaning_planner_prompt)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     explanation = state.get("explanation", "")
     summary_lines = ""

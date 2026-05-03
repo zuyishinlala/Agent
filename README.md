@@ -10,7 +10,7 @@ This project implements a CSV data-quality pipeline with the following stages:
    Proposes a declarative `CleaningPlan`: sentinel tokens, optional empty-string handling, whitespace stripping, numeric and date columns, and rows to drop when critical fields are missing.
 
 2. **Deterministic Cleaning Executor**  
-   Applies the plan with pandas (no model-generated code): sentinel and empty normalization, coercion, then optional `drop_duplicates` on inferred ID-like columns. Writes `artifacts/<stem>_cleaned.csv`.
+   Applies the plan with pandas (no model-generated code): sentinel and empty normalization, coercion, then optional `drop_duplicates` on inferred ID-like columns. Writes `artifacts/<stem>_cleaned.csv` for the default cleaning planner prompt, or `artifacts/<stem>_cleaned__<prompt_id>.csv` when `--cleaning-planner-prompt` is not `default` (sanitized for the filesystem).
 
 3. **Validation**  
    Rule-based checks on the cleaned file: per-column null counts and duplicate-ID rows when ID-like column names are inferred from the profile.
@@ -43,14 +43,14 @@ pipeline-run --csv dirty_cafe_sales.csv --quality-pass-threshold 85 --max-qualit
 - `--max-quality-retries`: maximum **extra** cleaning passes after a failing score (default `2`).
 - `--hints`: optional natural language for the planner (domain context, ID rules, common dirty tokens). Must still map to allowed `CleaningPlan` fields.
 - `--sample-rows`: how many non-null sample values per column go into the profile for the LLM (default `15`).
-- `--report`: path to write the Markdown report (default `artifacts/<csv-stem>_report.md`).
+- `--report`: path to write the Markdown report (default `artifacts/<csv-stem>_report.md`, or `<stem>_report__<prompt_id>.md` when `--cleaning-planner-prompt` is not `default`).
 
 Run `pipeline-run -h` or `pipeline-run --help` for the full argparse usage (provided by the standard library).
 
 **Outputs**
 
-- `artifacts/<name>_cleaned.csv`
-- `artifacts/<name>_report.md`
+- `artifacts/<name>_cleaned.csv` (or `<name>_cleaned__<prompt_id>.csv` for non-default `--cleaning-planner-prompt`)
+- `artifacts/<name>_report.md` (or `<name>_report__<prompt_id>.md` for non-default `--cleaning-planner-prompt`)
 
 Each report **Summary** includes **volume reduction** (input row count → final cleaned row count, e.g. `10,000 → 3,089`), **missing/invalid values standardized** (sentinel or empty cells normalized to null; not statistical imputation), **duplicates removed** (when ID columns are inferred), and **quality score** with threshold and retries. Full null counts and duplicate-ID counts are in the validation JSON fed to the explanation step.
 

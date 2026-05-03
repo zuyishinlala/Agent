@@ -64,6 +64,7 @@ def build_graph():
 def run_pipeline(
     csv_path: str,
     *,
+    cleaning_planner_prompt_id: str = "default",
     user_hints: str = "",
     sample_rows: int = 15,
     quality_pass_threshold: float = 70.0,
@@ -75,6 +76,8 @@ def run_pipeline(
     app = build_graph()
     initial: PipelineState = {
         "csv_path": csv_path,
+        "cleaning_planner_prompt_id": (cleaning_planner_prompt_id or "default").strip()
+        or "default",
         "user_hints": user_hints,
         "sample_rows": sample_rows,
         "quality_pass_threshold": float(quality_pass_threshold),

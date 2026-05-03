@@ -7,6 +7,7 @@ class PipelineState(TypedDict, total=False):
     """Graph state: only JSON-serializable values where possible (no DataFrames)."""
 
     csv_path: str
+    cleaning_planner_prompt_id: str
     user_hints: str
     sample_rows: int
     quality_pass_threshold: float

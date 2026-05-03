@@ -7,10 +7,12 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+from pipeline.artifact_names import cleaned_csv_filename
 from pipeline.cleaning_metrics import count_missing_filled_normalizations
 from pipeline.cleaning_plan import CleaningPlan, apply_cleaning_plan, load_csv, write_csv
 from pipeline.llm_text import extract_message_text
 from pipeline.profile import build_profile
+from pipeline.prompts import cleaning_planner_system_prompt
 from pipeline.quality import compute_quality_score, quality_feedback_text
 from pipeline.state import PipelineState
 from pipeline.validation import (
@@ -52,21 +54,12 @@ def node_cleaning_agent(state: PipelineState) -> dict:
     except Exception as e:  # noqa: BLE001 — missing API key validates at init
         return {"errors": state.get("errors", []) + [f"llm_init_failed: {e!s}"]}
 
-    sys = SystemMessage(
-        content=(
-            "You are a data cleaning planner. Given a JSON profile of a CSV dataset, "
-            "output a CleaningPlan with ONLY allowed fields: sentinel_tokens, "
-            "replace_empty_strings, strip_whitespace, numeric_columns, date_columns, "
-            "drop_rows_missing_in_columns, notes. "
-            "Choose sentinel_tokens that mark invalid/missing categorical or numeric data "
-            "(e.g. ERROR, UNKNOWN). "
-            "List numeric_columns for columns that should be floats/ints. "
-            "List date_columns for date-like columns. "
-            "drop_rows_missing_in_columns should include critical identifiers if obvious "
-            "(e.g. primary key / transaction id). "
-            "Do not invent column names: use only names from the profile."
-        ),
-    )
+    pid = (state.get("cleaning_planner_prompt_id") or "default").strip() or "default"
+    try:
+        system_text = cleaning_planner_system_prompt(pid)
+    except ValueError as e:
+        return {"errors": state.get("errors", []) + [f"cleaning_planner_prompt: {e!s}"]}
+    sys = SystemMessage(content=system_text)
     retry_block = (
         f"Prior quality check feedback (retry {state.get('clean_retry_count', 0)}):\n{feedback}\n\n"
         if feedback
@@ -113,7 +106,8 @@ def node_apply_cleaning(state: PipelineState) -> dict:
 
     stem = Path(csv_path).stem
     out_dir = Path("artifacts")
-    out_path = out_dir / f"{stem}_cleaned.csv"
+    pid = (state.get("cleaning_planner_prompt_id") or "default").strip() or "default"
+    out_path = out_dir / cleaned_csv_filename(stem, pid)
     cleaned_csv_path = write_csv(cleaned, out_path)
     stats: dict[str, int] = {
         "missing_filled": missing_filled,
