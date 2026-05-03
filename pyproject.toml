@@ -25,6 +25,7 @@ dev = [
 pipeline-run = "pipeline.run:main"
 pipeline-graph-mermaid = "pipeline.graph:main_mermaid"
 pipeline-planner-harness = "pipeline.harness_planner:main"
+pipeline-compare-harness-jsonl = "pipeline.compare_harness_jsonl:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

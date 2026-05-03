@@ -30,6 +30,15 @@ CLEANING_PLANNER_PROMPTS: dict[str, str] = {
         "missing values would corrupt uniqueness, and choose sentinel_tokens that normalize "
         "dirty placeholders without collapsing distinct IDs."
     ),
+    "retention_focus": (
+        "You are a data cleaning planner focused on row retention and minimal data loss. "
+        + _CLEANING_PLANNER_BASE
+        + " "
+        "Prefer normalizing dirty values with sentinel_tokens, strip_whitespace, and coercion "
+        "over dropping rows. Use drop_rows_missing_in_columns only for columns that are truly "
+        "unusable without a value (e.g. a single primary key), and avoid listing broad optional "
+        "fields there. When in doubt, keep the row and document trade-offs briefly in notes."
+    ),
 }
 
 

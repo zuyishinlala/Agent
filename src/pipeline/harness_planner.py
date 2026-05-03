@@ -124,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
     for variant_id in variants:
         for csv_path in args.csvs:
             for r in range(args.repeats):
+                print(
+                    f"[harness] cleaning_planner_prompt_id={variant_id} "
+                    f"csv={csv_path!s} repeat={r}",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 state = run_pipeline(
                     csv_path,
                     cleaning_planner_prompt_id=variant_id,
@@ -138,7 +144,10 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 with out_path.open("a", encoding="utf-8") as f:
                     f.write(line + "\n")
-                print(line, flush=True)
+                q = state.get("quality_score")
+                score_s = "n/a" if q is None else str(q)
+                out_csv = state.get("cleaned_csv_path") or "n/a"
+                print(f"{variant_id}\t{score_s}\t{out_csv}", flush=True)
 
     print(f"Appended JSONL: {out_path.resolve()}", file=sys.stderr)
     return 0
