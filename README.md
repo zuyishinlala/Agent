@@ -2,6 +2,8 @@
 
 A LangGraph + Gemini pipeline for cleaning, validating, scoring, and reporting data quality for CSV datasets.
 
+![LangGraph pipeline: load → cleaning_agent → apply_cleaning → validate → quality_score → explain_agent or retry](docs/images/Agent.png)
+
 ## Overview
 
 This project implements a CSV data-quality pipeline with the following stages:
